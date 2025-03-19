@@ -1,8 +1,16 @@
+# オレオレ認証基盤
+
 ```
-npm install
+bun install
 npm run dev
 ```
 
 ```
-npm run deploy
+bun run deploy
+```
+
+```
+wrangler secret put USERNAME
+wrangler secret put PASSWORD
+wrangler secret put JWT_SECRET
 ```
