@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { sign, jwt } from 'hono/jwt'
 
 const app = new Hono()
+const JWT_TTL_SECONDS = 15 * 60
 
 app.post('/login', async (c) => {
   const { username, password } = await c.req.json()
@@ -10,7 +11,15 @@ app.post('/login', async (c) => {
     return c.json({ error: 'Invalid credentials' }, 401)
   }
 
-  const token = await sign({ username }, c.env.JWT_SECRET)
+  const now = Math.floor(Date.now() / 1000)
+  const token = await sign(
+    {
+      username,
+      iat: now,
+      exp: now + JWT_TTL_SECONDS,
+    },
+    c.env.JWT_SECRET
+  )
 
   return c.json({ token })
 })
