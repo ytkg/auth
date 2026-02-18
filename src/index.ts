@@ -1,8 +1,13 @@
 import { Hono } from 'hono'
 import { sign, jwt } from 'hono/jwt'
+import llmsTxt from './llms.txt'
 
 const app = new Hono()
 const JWT_TTL_SECONDS = 15 * 60
+
+app.get('/llms.txt', (c) => {
+  return c.text(llmsTxt, 200, { 'Content-Type': 'text/plain; charset=utf-8' })
+})
 
 app.post('/login', async (c) => {
   const { username, password } = await c.req.json()

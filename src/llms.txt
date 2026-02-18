@@ -1,0 +1,41 @@
+# Authentication API (for AI clients)
+
+This service issues and verifies JWT access tokens.
+
+## Purpose
+- `POST /login`: exchange valid credentials for a JWT
+- `GET /verify`: validate a JWT and return its payload
+
+## Contract
+
+### `POST /login`
+- Request body (JSON):
+  - `username` (string)
+  - `password` (string)
+- Success:
+  - Status: `200`
+  - Body: `{ "token": "<jwt>" }`
+- Failure:
+  - Status: `401`
+  - Body: `{ "error": "Invalid credentials" }`
+
+### `GET /verify`
+- Required header:
+  - `Authorization: Bearer <jwt>`
+- Success:
+  - Status: `200`
+  - Body: `{ "payload": { ...jwt_claims } }`
+- Failure:
+  - Status: `401`
+
+## Token Semantics
+- Token type: JWT
+- Signed with server secret
+- Includes `iat` and `exp`
+- TTL: 15 minutes from issuance
+
+## Client Expectations
+- Treat `401` as authentication failure or expired token
+- On `401`, obtain a new token via `POST /login`
+- Do not expose or log raw credentials
+- Send tokens only over HTTPS in production
