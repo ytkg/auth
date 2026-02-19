@@ -6,7 +6,7 @@ Cloudflare Workers + Hono で動く、最小構成の認証 API です。
 
 1. `POST /login`
 - 入力: `{ "username": "...", "password": "..." }`
-- 成功: `200` + `{ "token": "..." }`
+- 成功: `200` + `{ "token": "...", "accessToken": "...", "refreshToken": "...", "tokenType": "Bearer", "expiresIn": 900 }`
 - 失敗: `401` + `{ "error": "Invalid credentials" }`
 
 2. `GET /verify`
@@ -14,7 +14,13 @@ Cloudflare Workers + Hono で動く、最小構成の認証 API です。
 - 成功: `200` + `{ "payload": ... }`
 - 失敗: `401`（JWT 検証エラー）
 
-JWT の有効期限は発行から 15 分です。
+3. `POST /refresh`
+- 入力: `{ "refreshToken": "..." }`
+- 成功: `200` + `{ "token": "...", "accessToken": "...", "refreshToken": "...", "tokenType": "Bearer", "expiresIn": 900 }`
+- 失敗: `401` + `{ "error": "Invalid refresh token" }`
+- 運用: 成功レスポンスの `refreshToken` で必ず上書きしてください（トークン使い回しを避けるため）
+
+アクセストークンの有効期限は発行から 15 分です。リフレッシュトークンは 7 日です。
 
 ## セットアップ
 
@@ -28,6 +34,7 @@ bun install
 wrangler secret put USERNAME
 wrangler secret put PASSWORD
 wrangler secret put JWT_SECRET
+wrangler secret put JWT_REFRESH_SECRET
 ```
 
 ## ローカル起動
@@ -55,13 +62,24 @@ curl -i http://127.0.0.1:8787/verify \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-3. 失敗系（任意）
+3. `refreshToken` で再発行
+```bash
+REFRESH_TOKEN='<loginで取得したrefreshToken>'
+curl -i -X POST http://127.0.0.1:8787/refresh \
+  -H 'Content-Type: application/json' \
+  -d "{\"refreshToken\":\"$REFRESH_TOKEN\"}"
+```
+
+4. 失敗系（任意）
 ```bash
 curl -i -X POST http://127.0.0.1:8787/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"wrong","password":"wrong"}'
 curl -i http://127.0.0.1:8787/verify
 curl -i http://127.0.0.1:8787/verify -H 'Authorization: Bearer invalid.token'
+curl -i -X POST http://127.0.0.1:8787/refresh \
+  -H 'Content-Type: application/json' \
+  -d '{"refreshToken":"invalid.token"}'
 ```
 
 ## デプロイ

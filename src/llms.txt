@@ -4,6 +4,7 @@ This service issues and verifies JWT access tokens.
 
 ## Purpose
 - `POST /login`: exchange valid credentials for a JWT
+- `POST /refresh`: exchange a valid refresh token for a new token pair
 - `GET /verify`: validate a JWT and return its payload
 
 ## Contract
@@ -14,10 +15,20 @@ This service issues and verifies JWT access tokens.
   - `password` (string)
 - Success:
   - Status: `200`
-  - Body: `{ "token": "<jwt>" }`
+  - Body: `{ "token": "<jwt>", "accessToken": "<jwt>", "refreshToken": "<jwt>", "tokenType": "Bearer", "expiresIn": 900 }`
 - Failure:
   - Status: `401`
   - Body: `{ "error": "Invalid credentials" }`
+
+### `POST /refresh`
+- Request body (JSON):
+  - `refreshToken` (string)
+- Success:
+  - Status: `200`
+  - Body: `{ "token": "<jwt>", "accessToken": "<jwt>", "refreshToken": "<jwt>", "tokenType": "Bearer", "expiresIn": 900 }`
+- Failure:
+  - Status: `401`
+  - Body: `{ "error": "Invalid refresh token" }`
 
 ### `GET /verify`
 - Required header:
@@ -32,10 +43,12 @@ This service issues and verifies JWT access tokens.
 - Token type: JWT
 - Signed with server secret
 - Includes `iat` and `exp`
-- TTL: 15 minutes from issuance
+- Access token TTL: 15 minutes from issuance
+- Refresh token TTL: 7 days from issuance
 
 ## Client Expectations
 - Treat `401` as authentication failure or expired token
-- On `401`, obtain a new token via `POST /login`
+- On access token expiry, obtain a new token via `POST /refresh`
+- If refresh fails, obtain a new token via `POST /login`
 - Do not expose or log raw credentials
 - Send tokens only over HTTPS in production
